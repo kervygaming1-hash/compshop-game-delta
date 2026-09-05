@@ -1,15 +1,34 @@
 -- Compshop Game - Delta Executor Script
 -- Mobile Optimized with Scrollable Menus & Toggle Button
 
+local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
 local gameActive = false
 local ScreenGui = nil
+local ToggleGui = nil
 local ToggleButton = nil
 
+-- Ensure we have the local player and PlayerGui (safe wait if needed)
+local LocalPlayer = Players.LocalPlayer
+if not LocalPlayer then
+    LocalPlayer = Players.PlayerAdded:Wait()
+end
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- Safely get the screen size (viewport). Fall back to device API or a default.
+local screen_size = nil
+if workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize then
+    screen_size = workspace.CurrentCamera.ViewportSize
+elseif UserInputService.GetDeviceViewportSize then
+    screen_size = UserInputService:GetDeviceViewportSize()
+else
+    screen_size = Vector2.new(800, 600)
+end
+
 -- Configuration
-local UI_SCALE = screen_size.X < 400 and 0.8 or 1 -- Scale down for very small screens
+local UI_SCALE = (screen_size and screen_size.X and screen_size.X < 400) and 0.8 or 1 -- Scale down for very small screens
 
 -- Function to create the main UI
 local function CreateGameUI()
@@ -18,7 +37,7 @@ local function CreateGameUI()
     ScreenGui.Name = "CompshopUI"
     ScreenGui.ResetOnSpawn = false
     ScreenGui.DisplayOrder = 999
-    ScreenGui.Parent = game.CoreGui
+    ScreenGui.Parent = PlayerGui
 
     -- Main Container (Scrollable)
     local MainContainer = Instance.new("Frame")
@@ -238,7 +257,8 @@ local function CreateGameUI()
         ListLayout.Parent = ScrollingFrame
         Padding.Parent = ScrollingFrame
         
-        CreateButton("Title", "🛒 COMPSHOP GAME", 1, function() end).TextEditable = false
+        local titleBtn = CreateButton("Title", "🛒 COMPSHOP GAME", 1, function() end)
+        titleBtn.AutoButtonColor = false
         CreateButton("Shop", "🛍️ Shop", 2, ShopMenu)
         CreateButton("Inventory", "🎒 Inventory", 3, InventoryMenu)
         CreateButton("Stats", "📊 Stats", 4, StatsMenu)
@@ -284,6 +304,13 @@ end
 
 -- Create the toggle button (Fixed position, always visible)
 local function CreateToggleButton()
+    -- Create a small ScreenGui to host the toggle so it works inside PlayerGui
+    ToggleGui = Instance.new("ScreenGui")
+    ToggleGui.Name = "CompshopToggleGui"
+    ToggleGui.ResetOnSpawn = false
+    ToggleGui.DisplayOrder = 1000
+    ToggleGui.Parent = PlayerGui
+
     ToggleButton = Instance.new("TextButton")
     ToggleButton.Name = "CompshopToggle"
     ToggleButton.Size = UDim2.new(0, 60, 0, 60)
@@ -295,7 +322,7 @@ local function CreateToggleButton()
     ToggleButton.Text = "🛒"
     ToggleButton.BorderSizePixel = 0
     ToggleButton.ZIndex = 1000
-    ToggleButton.Parent = game.CoreGui
+    ToggleButton.Parent = ToggleGui
 
     local ToggleCorner = Instance.new("UICorner")
     ToggleCorner.CornerRadius = UDim.new(0, 30)
